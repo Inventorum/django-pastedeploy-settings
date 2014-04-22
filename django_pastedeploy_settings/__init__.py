@@ -123,6 +123,19 @@ def _set_up_settings(global_conf, local_conf):
     django_settings_module = \
         _get_django_settings_module_from_global_conf(global_conf)
 
+    # apply all settings from ``[DEFAULT]`` section to django directly and first as otherwise
+    # e.g. this won't work:
+    #
+    # [DEFAULT]
+    # STATIC_URL = "/static/"
+    # VAR_ROOT = %(here)s/../../var
+    valid_names_re = re.compile("^[A-Z_]+$")
+    leftover_globals_to_apply_direct = {
+        l: v for l, v in global_conf.copy().iteritems()
+        if valid_names_re.match(l) and l not in local_conf
+    }
+    _store_django_settings(leftover_globals_to_apply_direct, django_settings_module)
+
     _set_django_settings_module(django_settings_module)
 
     options = resolve_local_conf_options(global_conf, local_conf)
